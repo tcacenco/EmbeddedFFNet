@@ -265,15 +265,30 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	uint8_t	Tx_Buffer[64];
 	uint8_t	Aux_Buffer[16];
 	static	uint16_t	PacketCount = 0;
+	static	uint8_t		DataType;
+	static uint32_t		Flash_BaseAddr;
+	int i = 0;
+	static uint32_t		flash_cont = 0;
 
 	USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
 	USBD_CDC_ReceivePacket(&hUsbDeviceFS);
 
 	if(xUSBDownloadVar.RxMode == true)
 	{
-		memcpy(&xUSBDownloadVar.DataBuffer[PACKET_SIZE*PacketCount], &Buf[0], PACKET_SIZE);
+		USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
+		USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+		for(i = 0; i<(*Len); i++)
+		{
+			HAL_FLASH_Unlock();
+			HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, (flash_cont + i), Buf[i]);
+			HAL_FLASH_Lock();
+			Buf[i]=0;
+		}
+		flash_cont += *Len;
+
 		PacketCount++;
-		if(PacketCount >= ((xUSBDownloadVar.Size+(PACKET_SIZE-1))/PACKET_SIZE))
+		//if(PacketCount >= ((xUSBDownloadVar.Size+(PACKET_SIZE-1))/PACKET_SIZE))
+		if((flash_cont - Flash_BaseAddr) >= xUSBDownloadVar.Size)
 		{
 			xUSBDownloadVar.RxMode	=	false;
 			strncpy((char*)Tx_Buffer, "File Received\n", 15);
@@ -289,10 +304,9 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 				USBD_CDC_ReceivePacket(&hUsbDeviceFS);
 
 				free(xUSBDownloadVar.DataBuffer);
-				xUSBDownloadVar.Size = Buf[POS_TRANSFER_SIZE] << 24 | Buf[POS_TRANSFER_SIZE+1] << 16 | Buf[POS_TRANSFER_SIZE+2] << 8 | Buf[POS_TRANSFER_SIZE+3];
-				xUSBDownloadVar.DataBuffer = malloc(xUSBDownloadVar.Size);
+				xUSBDownloadVar.Size = atoi((char*)&Buf[POS_TRANSFER_SIZE]);
 
-				strncpy((char*)Tx_Buffer, "Bytes Allocated for Data Transfer: ", 36);
+				strncpy((char*)Tx_Buffer, "Size Received for Data Transfer: ", 36);
 				itoa(xUSBDownloadVar.Size, (char*)Aux_Buffer,10);
 				strcat((char*)Tx_Buffer, (char*)Aux_Buffer);
 				strcat((char*)Tx_Buffer, "\n\0");
@@ -300,22 +314,80 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 				CDC_Transmit_FS((uint8_t*)Tx_Buffer, strlen((char*)Tx_Buffer));
 			break;
 
-			case	USB_MODE_TRANSFER_DATA_FLOATMODEL:
+			case	USB_MODE_TRANSFER_DATATYPE:
+				if(strncmp((char*)&Buf[POS_TRANSFER_DATATYPE], "dataset", 7) == 0)
+				{
+					DataType = DATATYPE_DATASET;
+					strncpy((char*)Tx_Buffer, "Data Type: dataset\n", 33);
+				}
+				else if(strncmp((char*)&Buf[POS_TRANSFER_DATATYPE], "float model", 11) == 0)
+				{
+					DataType = DATATYPE_FLOATMODEL;
+					strncpy((char*)Tx_Buffer, "Data Type: float model\n", 33);
+				}
+				else if(strncmp((char*)&Buf[POS_TRANSFER_DATATYPE], "int model", 9) == 0)
+				{
+					DataType = DATATYPE_INTMODEL;
+					strncpy((char*)Tx_Buffer, "Data Type: int model\n", 33);
+				}
+				else
+				{
+					DataType = 0xff;
+					strncpy((char*)Tx_Buffer, "Data Type: Error\n", 33);
+				}
 				USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
 				USBD_CDC_ReceivePacket(&hUsbDeviceFS);
 
+				CDC_Transmit_FS((uint8_t*)Tx_Buffer, strlen((char*)Tx_Buffer));
 			break;
 
-			case	USB_MODE_INITTRANSFER:
-				USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
-				//USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &xUSBDownloadVar.DataBuffer[0]);
-				USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+			case	USB_MODE_INITTRANSFER:;
+				/* Flash Erase Variables */
+				uint32_t SectorError;
+				FLASH_EraseInitTypeDef xFlash_Erase;
+				xFlash_Erase.TypeErase = FLASH_TYPEERASE_SECTORS;
+				xFlash_Erase.NbSectors = 1;
+				xFlash_Erase.VoltageRange = FLASH_VOLTAGE_RANGE_3;
 
+				strncpy((char*)Tx_Buffer, "Erasing FLASH Sections...\n", 64);
+				CDC_Transmit_FS((uint8_t*)Tx_Buffer, strlen((char*)Tx_Buffer));
+
+				/* Flash Sector Erase */
+				HAL_FLASH_Unlock();
+				switch(DataType)
+				{
+				case DATATYPE_DATASET	:
+					xFlash_Erase.Sector = FLASH_SECTOR_6;
+					HAL_FLASHEx_Erase(&xFlash_Erase, &SectorError);
+					xFlash_Erase.Sector = FLASH_SECTOR_7;
+					HAL_FLASHEx_Erase(&xFlash_Erase, &SectorError);
+					xFlash_Erase.Sector = FLASH_SECTOR_8;
+					HAL_FLASHEx_Erase(&xFlash_Erase, &SectorError);
+					xFlash_Erase.Sector = FLASH_SECTOR_9;
+					HAL_FLASHEx_Erase(&xFlash_Erase, &SectorError);
+					Flash_BaseAddr = BASEADDR_DATASET;
+					break;
+				case DATATYPE_FLOATMODEL:
+					xFlash_Erase.Sector = FLASH_SECTOR_10;
+					HAL_FLASHEx_Erase(&xFlash_Erase, &SectorError);
+					Flash_BaseAddr = BASEADDR_FLOATMODEL;
+					break;
+				case DATATYPE_INTMODEL:
+					xFlash_Erase.Sector = FLASH_SECTOR_11;
+					HAL_FLASHEx_Erase(&xFlash_Erase, &SectorError);
+					Flash_BaseAddr = BASEADDR_INTMODEL;
+					break;
+				}
+				HAL_FLASH_Lock();
+
+				USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
+				USBD_CDC_ReceivePacket(&hUsbDeviceFS);
 				PacketCount					=	0;
 				xUSBDownloadVar.RxMode		=	true;
 				xUSBDownloadVar.DataType   	= Buf[POS_TRANSFER_DATATYPE];
-				strncpy((char*)Tx_Buffer, "Initialize Data Transmission OK\n", 33);
+				strncpy((char*)Tx_Buffer, "FLASH Sections Erased, Startup OK\n", 64);
 				CDC_Transmit_FS((uint8_t*)Tx_Buffer, strlen((char*)Tx_Buffer));
+				flash_cont = Flash_BaseAddr;
 			break;
 
 			default:
