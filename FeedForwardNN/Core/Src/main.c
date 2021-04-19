@@ -109,7 +109,7 @@ int main(void)
   {
 	  //CDC_Transmit_FS(buffer, 10);
     /* USER CODE END WHILE */
-	//v_LoadFloatModel(&xNetParam, &xWBPtr);
+	v_LoadFloatModel(&xNetParam, &xWBPtr);
 	v_LoadIntModel(&xNetParam, &xDistribution, &xQuantizedVal);
     /* USER CODE BEGIN 3 */
 

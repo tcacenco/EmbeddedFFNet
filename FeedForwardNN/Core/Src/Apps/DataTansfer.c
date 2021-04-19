@@ -47,7 +47,7 @@ void v_LoadIntModel(netparam_t *xNetParam, distribution_t *xDistribution, quanti
 	uint32_t	values = 0;
 	uint8_t*	DataPtr;
 
-	DataPtr = (uint8_t*)BASEADDR_FLOATMODEL;
+	DataPtr = (uint8_t*)BASEADDR_INTMODEL;
 
 	memcpy(xNetParam, DataPtr, sizeof(*xNetParam));
 

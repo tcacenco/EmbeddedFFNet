@@ -1145,7 +1145,7 @@ void v_LoadIntModel(netparam_t *xNetParam, distribution_t *xDistribution, quanti
  8000dca:	61bb      	str	r3, [r7, #24]
 	uint8_t*	DataPtr;
 
-	DataPtr = (uint8_t*)BASEADDR_FLOATMODEL;
+	DataPtr = (uint8_t*)BASEADDR_INTMODEL;
  8000dcc:	4ba2      	ldr	r3, [pc, #648]	; (8001058 <v_LoadIntModel+0x29c>)
  8000dce:	617b      	str	r3, [r7, #20]
 
@@ -1473,7 +1473,7 @@ void v_LoadIntModel(netparam_t *xNetParam, distribution_t *xDistribution, quanti
  8001052:	46bd      	mov	sp, r7
  8001054:	bdb0      	pop	{r4, r5, r7, pc}
  8001056:	bf00      	nop
- 8001058:	080c0000 	.word	0x080c0000
+ 8001058:	080e0000 	.word	0x080e0000
  800105c:	40200000 	.word	0x40200000
 
 08001060 <v_DynamicAlloc_quant>:
