@@ -385,7 +385,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 				PacketCount					=	0;
 				xUSBDownloadVar.RxMode		=	true;
 				xUSBDownloadVar.DataType   	= Buf[POS_TRANSFER_DATATYPE];
-				strncpy((char*)Tx_Buffer, "FLASH Sections Erased, Startup OK\n", 64);
+				strncpy((char*)Tx_Buffer, "FLASH Sections Erased\n", 64);
 				CDC_Transmit_FS((uint8_t*)Tx_Buffer, strlen((char*)Tx_Buffer));
 				flash_cont = Flash_BaseAddr;
 			break;

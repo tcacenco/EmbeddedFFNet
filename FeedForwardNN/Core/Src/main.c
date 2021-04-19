@@ -20,6 +20,10 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "usb_device.h"
+#include "DataTransfer.h"
+#include "fp32_FeedForwardNN.h"
+#include "int_FeedForwardNN.h"
+#include "sys_FeedForwardNN.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -90,7 +94,13 @@ int main(void)
   MX_GPIO_Init();
   MX_RTC_Init();
   MX_USB_DEVICE_Init();
+
   /* USER CODE BEGIN 2 */
+  netparam_t xNetParam;
+  float* xWBPtr = NULL;
+
+  distribution_t xDistribution;
+  quantizedval_t xQuantizedVal;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -99,7 +109,8 @@ int main(void)
   {
 	  //CDC_Transmit_FS(buffer, 10);
     /* USER CODE END WHILE */
-
+	//v_LoadFloatModel(&xNetParam, &xWBPtr);
+	v_LoadIntModel(&xNetParam, &xDistribution, &xQuantizedVal);
     /* USER CODE BEGIN 3 */
 
   }

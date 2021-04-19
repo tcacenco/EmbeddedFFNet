@@ -1,3 +1,4 @@
+"Core/Src/Apps/DataTansfer.o"
 "Core/Src/Apps/fp32_FeedForwardNN.o"
 "Core/Src/Apps/int_FeedForwardNN.o"
 "Core/Src/Apps/sys_FeedForwardNN.o"
