@@ -145,3 +145,27 @@ void v_LoadTestDataSet(uint8_t * DataPtr, DataSet_t * xDataSet, netparam_t	xNetP
 //
 //	fclose(FPtr);
 //}
+
+void v_LoadTestDataNum(DataSet_t* xDataSet, netparam_t	xNetParam, uint16_t num)
+{
+	uint8_t* DataPtr;
+
+	DataPtr = (uint8_t*)BASEADDR_DATASET;
+
+	memcpy(&(xDataSet->test_size), &DataPtr[0], sizeof(uint16_t));
+
+	if (xDataSet->x_test != NULL)
+	{
+		free(xDataSet->x_test);
+	}
+	if (xDataSet->y_test != NULL)
+	{
+		free(xDataSet->y_test);
+	}
+
+	xDataSet->x_test = malloc(sizeof(float) * 40);
+	xDataSet->y_test = malloc(sizeof(float));
+
+	memcpy(xDataSet->x_test, &DataPtr[sizeof(uint16_t)+(num*(xNetParam.NonLayer[0])*sizeof(float))], (sizeof(float) * xNetParam.NonLayer[0]));
+	memcpy(xDataSet->y_test, &DataPtr[sizeof(uint16_t) + (xDataSet->test_size * sizeof(float) * xNetParam.NonLayer[0]) + (num * (xNetParam.NonLayer[xNetParam.Layers - 1]) * sizeof(float))], (sizeof(float) * xNetParam.NonLayer[xNetParam.Layers - 1]));
+}

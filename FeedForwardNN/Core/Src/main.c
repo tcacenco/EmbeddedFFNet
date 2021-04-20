@@ -97,10 +97,18 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
   netparam_t xNetParam;
+
+  DataSet_t xDataSet;
   float* xWBPtr = NULL;
 
   distribution_t xDistribution;
   quantizedval_t xQuantizedVal;
+
+
+  float* ZPtr = NULL;
+  float* FuncPtr = NULL;
+
+  v_DynamicAllocForwardProp(&ZPtr, &FuncPtr);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -109,8 +117,10 @@ int main(void)
   {
 	  //CDC_Transmit_FS(buffer, 10);
     /* USER CODE END WHILE */
-	v_LoadFloatModel(&xNetParam, &xWBPtr);
-	v_LoadIntModel(&xNetParam, &xDistribution, &xQuantizedVal);
+//	v_LoadFloatModel(&xNetParam, &xWBPtr);
+//	v_LoadIntModel(&xNetParam, &xDistribution, &xQuantizedVal);
+//
+//	v_LoadTestDataNum(&xDataSet, xNetParam, 0);
     /* USER CODE BEGIN 3 */
 
   }

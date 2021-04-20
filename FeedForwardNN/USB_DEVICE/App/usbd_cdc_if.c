@@ -264,8 +264,9 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   /* USER CODE BEGIN 6 */
 	uint8_t	Tx_Buffer[64];
 	uint8_t	Aux_Buffer[16];
+	uint8_t dig_count;
+	uint16_t num;
 	static	uint16_t	PacketCount = 0;
-	static	uint8_t		DataType;
 	static uint32_t		Flash_BaseAddr;
 	int i = 0;
 	static uint32_t		flash_cont = 0;
@@ -291,8 +292,19 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 		if((flash_cont - Flash_BaseAddr) >= xUSBDownloadVar.Size)
 		{
 			xUSBDownloadVar.RxMode	=	false;
-			strncpy((char*)Tx_Buffer, "File Received\n", 15);
+			strncpy((char*)Tx_Buffer, "File Received.\0", 15);
 			CDC_Transmit_FS((uint8_t*)Tx_Buffer, strlen((char*)Tx_Buffer));
+			switch(xUSBDownloadVar.DataType)
+			{
+			case DATATYPE_DATASET:
+				break;
+			case DATATYPE_FLOATMODEL:
+				break;
+			case DATATYPE_INTMODEL:
+				break;
+			default:
+				break;
+			}
 		}
 	}
 	else
@@ -309,7 +321,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 				strncpy((char*)Tx_Buffer, "Size Received for Data Transfer: ", 36);
 				itoa(xUSBDownloadVar.Size, (char*)Aux_Buffer,10);
 				strcat((char*)Tx_Buffer, (char*)Aux_Buffer);
-				strcat((char*)Tx_Buffer, "\n\0");
+				strcat((char*)Tx_Buffer, "\0");
 
 				CDC_Transmit_FS((uint8_t*)Tx_Buffer, strlen((char*)Tx_Buffer));
 			break;
@@ -317,23 +329,23 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			case	USB_MODE_TRANSFER_DATATYPE:
 				if(strncmp((char*)&Buf[POS_TRANSFER_DATATYPE], "dataset", 7) == 0)
 				{
-					DataType = DATATYPE_DATASET;
-					strncpy((char*)Tx_Buffer, "Data Type: dataset\n", 33);
+					xUSBDownloadVar.DataType = DATATYPE_DATASET;
+					strncpy((char*)Tx_Buffer, "Data Type: dataset\0", 20);
 				}
 				else if(strncmp((char*)&Buf[POS_TRANSFER_DATATYPE], "float model", 11) == 0)
 				{
-					DataType = DATATYPE_FLOATMODEL;
-					strncpy((char*)Tx_Buffer, "Data Type: float model\n", 33);
+					xUSBDownloadVar.DataType = DATATYPE_FLOATMODEL;
+					strncpy((char*)Tx_Buffer, "Data Type: float model\0", 33);
 				}
 				else if(strncmp((char*)&Buf[POS_TRANSFER_DATATYPE], "int model", 9) == 0)
 				{
-					DataType = DATATYPE_INTMODEL;
-					strncpy((char*)Tx_Buffer, "Data Type: int model\n", 33);
+					xUSBDownloadVar.DataType = DATATYPE_INTMODEL;
+					strncpy((char*)Tx_Buffer, "Data Type: int model\0", 33);
 				}
 				else
 				{
-					DataType = 0xff;
-					strncpy((char*)Tx_Buffer, "Data Type: Error\n", 33);
+					xUSBDownloadVar.DataType = 0xff;
+					strncpy((char*)Tx_Buffer, "Data Type: Error\0", 33);
 				}
 				USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
 				USBD_CDC_ReceivePacket(&hUsbDeviceFS);
@@ -349,12 +361,9 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 				xFlash_Erase.NbSectors = 1;
 				xFlash_Erase.VoltageRange = FLASH_VOLTAGE_RANGE_3;
 
-				strncpy((char*)Tx_Buffer, "Erasing FLASH Sections...\n", 64);
-				CDC_Transmit_FS((uint8_t*)Tx_Buffer, strlen((char*)Tx_Buffer));
-
 				/* Flash Sector Erase */
 				HAL_FLASH_Unlock();
-				switch(DataType)
+				switch(xUSBDownloadVar.DataType)
 				{
 				case DATATYPE_DATASET	:
 					xFlash_Erase.Sector = FLASH_SECTOR_6;
@@ -384,14 +393,40 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 				USBD_CDC_ReceivePacket(&hUsbDeviceFS);
 				PacketCount					=	0;
 				xUSBDownloadVar.RxMode		=	true;
-				xUSBDownloadVar.DataType   	= Buf[POS_TRANSFER_DATATYPE];
-				strncpy((char*)Tx_Buffer, "FLASH Sections Erased\n", 64);
+				strncpy((char*)Tx_Buffer, "FLASH Sections Erased. \0", 24);
 				CDC_Transmit_FS((uint8_t*)Tx_Buffer, strlen((char*)Tx_Buffer));
 				flash_cont = Flash_BaseAddr;
 			break;
 
+			case USB_MODE_SELMODEL:
+				if(strncmp((char*)&Buf[POS_TRANSFER_DATATYPE], "float", 5) == 0)
+					xUSBDownloadVar.flag_model = 1 << 0;
+				else if(strncmp((char*)&Buf[POS_TRANSFER_DATATYPE], "int 4", 5) == 0)
+					xUSBDownloadVar.flag_model = 1 << 1;
+				else if(strncmp((char*)&Buf[POS_TRANSFER_DATATYPE], "int 8", 5) == 0)
+					xUSBDownloadVar.flag_model = 1 << 2;
+				else if(strncmp((char*)&Buf[POS_TRANSFER_DATATYPE], "int 16", 6) == 0)
+					xUSBDownloadVar.flag_model = 1 << 3;
+				else if(strncmp((char*)&Buf[POS_TRANSFER_DATATYPE], "int 32", 6) == 0)
+					xUSBDownloadVar.flag_model = 1 << 4;
+				break;
+
+			case USB_MODE_RUN:
+				xUSBDownloadVar.flag_run = true;
+				xUSBDownloadVar.test_index = atoi((char*)&Buf[POS_TRANSFER_SIZE]);
+				num = xUSBDownloadVar.test_index;
+				dig_count = 0;
+				do
+				{
+					dig_count++;
+					num /= 10;
+				} while(num != 0);
+
+				xUSBDownloadVar.test_size = atoi((char*)&Buf[POS_TRANSFER_SIZE + dig_count + 1]);
+				break;
+
 			default:
-			break;
+				break;
 		}
 	}
 	return (USBD_OK);

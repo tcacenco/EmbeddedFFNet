@@ -17,4 +17,6 @@ void v_LoadIntModel(netparam_t* xNetParam, distribution_t* xDistribution, quanti
 void v_LoadTestDataSet(uint8_t* DataPtr, DataSet_t* xDataSet, netparam_t	xNetParam);
 
 //void v_SaveTestDataSet(DataSet_t xDataSet, netparam_t	xNetParam);
+
+void v_LoadTestDataNum(DataSet_t* xDataSet, netparam_t	xNetParam, uint16_t num);
 #endif

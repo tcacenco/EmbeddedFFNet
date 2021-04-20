@@ -70,6 +70,8 @@
 #define USB_MODE_TRANSFER_SIZE				'S'
 #define	USB_MODE_TRANSFER_DATATYPE			'D'
 #define	USB_MODE_INITTRANSFER				'I'
+#define USB_MODE_SELMODEL					'M'
+#define	USB_MODE_RUN						'R'
 
 #define	POS_USBMODE					0
 #define POS_TRANSFER_SIZE			2
@@ -93,9 +95,13 @@ typedef struct USB_DOWNLOAD_VAR{
 	uint32_t	Size;
 	uint8_t		DataType;
 	uint8_t		*DataBuffer;
+	uint8_t		flag_model;
+	bool		flag_run;
+	uint16_t	test_index;
+	uint16_t	test_size;
 } USBDownloadVar_t;
 
-static volatile	USBDownloadVar_t	xUSBDownloadVar = {.RxMode=false};
+static volatile	USBDownloadVar_t	xUSBDownloadVar = {.RxMode=false, .flag_model=0, .flag_run=false};
 /* USER CODE END EXPORTED_TYPES */
 
 /**
