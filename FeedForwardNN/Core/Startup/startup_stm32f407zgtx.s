@@ -61,10 +61,9 @@ defined in linker script */
 Reset_Handler:  
   ldr   sp, =_estack     /* set stack pointer */
 
-/* Copy the data segment initializers from flash to SRAM */  
+/* Copy the data segment initializers from flash to SRAM and CCMRAM */
   movs  r1, #0
   b  LoopCopyDataInit
-
 CopyDataInit:
   ldr  r3, =_sidata
   ldr  r3, [r3, r1]
@@ -77,6 +76,19 @@ LoopCopyDataInit:
   adds  r2, r0, r1
   cmp  r2, r3
   bcc  CopyDataInit
+  movs r1, #0
+  b LoopCopyDataInit1
+CopyDataInit1:
+  ldr r3, =_siccmram
+  ldr r3, [r3, r1]
+  str r3, [r0, r1]
+  adds r1, r1, #4
+LoopCopyDataInit1:
+  ldr r0, =_sccmram
+  ldr r3, =_eccmram
+  adds r2, r0, r1
+  cmp r2, r3
+  bcc CopyDataInit1
   ldr  r2, =_sbss
   b  LoopFillZerobss
 /* Zero fill the bss segment. */  
@@ -88,6 +100,8 @@ LoopFillZerobss:
   ldr  r3, = _ebss
   cmp  r2, r3
   bcc  FillZerobss
+
+
 
 /* Call the clock system intitialization function.*/
   bl  SystemInit   

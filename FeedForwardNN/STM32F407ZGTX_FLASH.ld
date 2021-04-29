@@ -68,7 +68,20 @@ SECTIONS
 
     . = ALIGN(4);
     _etext = .;        /* define a global symbols at end of code */
-  } >CCMRAM AT> FLASH
+  } >FLASH
+
+	_siccmram = LOADADDR(.ccmram);
+
+	.ccmram :
+	{
+	  . = ALIGN(4);
+	  _sccmram = .;       /* create a global symbol at ccmram start */
+	  *(.ccmram)
+	  *(.ccmram*)
+	  
+	  . = ALIGN(4);
+	  _eccmram = .;       /* create a global symbol at ccmram end */
+	} >CCMRAM AT> FLASH
 
   /* Constant data into "FLASH" Rom type memory */
   .rodata :

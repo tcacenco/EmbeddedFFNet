@@ -99,6 +99,9 @@ int main(void)
   /* USER CODE BEGIN 2 */
   int i;
   int j;
+  uint32_t time_old = 0;
+  uint32_t process_time = 0;
+
   netparam_t xNetParam;
 
   DataSet_t xDataSet = {.x_test = NULL, .y_test = NULL};
@@ -142,7 +145,8 @@ int main(void)
 			  v_FloatSetParameters(xNetParam);
 			  v_float_SetPtr(WBPtr);
 			  v_DynamicAllocForwardProp(&f_ZPtr, &f_FuncPtr);
-			  for(j = 0; j<1000; j++)
+			  time_old = HAL_GetTick();
+			  for(j = 0; j<10; j++)
 			  {
 				  for(i = 0; i < test_size; i++)
 				  {
@@ -150,13 +154,15 @@ int main(void)
 					  v_ProcessForwardPropNN_FP32(f_ZPtr, f_FuncPtr, xDataSet.x_test);
 				  }
 			  }
+			  process_time = HAL_GetTick() - time_old;
 			  break;
 		  case FLAGMODEL_INT4:
 			  v_DynamicAllocForwardProp_int(&int_ZPtr, &int_FuncPtr);
 			  v_LoadIntModel(&xNetParam, &xDistribution, &xQuantizedVal);
 			  xNetParam.xVarPrecision.precision = 4;
 			  v_SetQuantNetParameters(xNetParam, xQuantizedVal, xDistribution);
-			  for(j = 0; j<1000; j++)
+			  time_old = HAL_GetTick();
+			  for(j = 0; j<100; j++)
 			  {
 				  for(i = 0; i < test_size; i++)
 				  {
@@ -165,13 +171,15 @@ int main(void)
 					  v_ProcessForwardPropNN_int(int_ZPtr, int_FuncPtr, xDataSet.x_test);
 				  }
 			  }
+			  process_time = HAL_GetTick() - time_old;
 			  break;
 		  case FLAGMODEL_INT8:
 			  v_DynamicAllocForwardProp_int(&int_ZPtr, &int_FuncPtr);
 			  v_LoadIntModel(&xNetParam, &xDistribution, &xQuantizedVal);
 			  xNetParam.xVarPrecision.precision = 8;
 			  v_SetQuantNetParameters(xNetParam, xQuantizedVal, xDistribution);
-			  for(j = 0; j<1000; j++)
+			  time_old = HAL_GetTick();
+			  for(j = 0; j<100; j++)
 			  {
 				  for(i = 0; i < test_size; i++)
 				  {
@@ -180,13 +188,15 @@ int main(void)
 					  v_ProcessForwardPropNN_int(int_ZPtr, int_FuncPtr, xDataSet.x_test);
 				  }
 			  }
+			  process_time = HAL_GetTick() - time_old;
 			  break;
 		  case FLAGMODEL_INT16:
 			  v_DynamicAllocForwardProp_int(&int_ZPtr, &int_FuncPtr);
 			  v_LoadIntModel(&xNetParam, &xDistribution, &xQuantizedVal);
 			  xNetParam.xVarPrecision.precision = 16;
 			  v_SetQuantNetParameters(xNetParam, xQuantizedVal, xDistribution);
-			  for(j = 0; j<1000; j++)
+			  time_old = HAL_GetTick();
+			  for(j = 0; j<100; j++)
 			  {
 				  for(i = 0; i < test_size; i++)
 				  {
@@ -195,13 +205,15 @@ int main(void)
 					  v_ProcessForwardPropNN_int(int_ZPtr, int_FuncPtr, xDataSet.x_test);
 				  }
 			  }
+			  process_time = HAL_GetTick() - time_old;
 			  break;
 		  case FLAGMODEL_INT32:
 			v_DynamicAllocForwardProp_int(&int_ZPtr, &int_FuncPtr);
 			v_LoadIntModel(&xNetParam, &xDistribution, &xQuantizedVal);
 			xNetParam.xVarPrecision.precision = 32;
 			v_SetQuantNetParameters(xNetParam, xQuantizedVal, xDistribution);
-			for(j = 0; j<1000; j++)
+			time_old = HAL_GetTick();
+			for(j = 0; j<10; j++)
 			{
 				  for(i = 0; i < test_size; i++)
 				  {
@@ -210,6 +222,7 @@ int main(void)
 					  v_ProcessForwardPropNN_int(int_ZPtr, int_FuncPtr, xDataSet.x_test);
 				  }
 			}
+			process_time = HAL_GetTick() - time_old;
 			break;
 		  }
 
