@@ -20,6 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "usb_device.h"
+#include "usbd_cdc_if.h"
 #include "DataTransfer.h"
 #include "fp32_FeedForwardNN.h"
 #include "int_FeedForwardNN.h"
@@ -96,31 +97,125 @@ int main(void)
   MX_USB_DEVICE_Init();
 
   /* USER CODE BEGIN 2 */
+  int i;
+  int j;
   netparam_t xNetParam;
 
-  DataSet_t xDataSet;
-  float* xWBPtr = NULL;
+  DataSet_t xDataSet = {.x_test = NULL, .y_test = NULL};
+  float* WBPtr = NULL;
 
   distribution_t xDistribution;
   quantizedval_t xQuantizedVal;
 
 
-  float* ZPtr = NULL;
-  float* FuncPtr = NULL;
+  float* f_ZPtr = NULL;
+  float* f_FuncPtr = NULL;
 
-  v_DynamicAllocForwardProp(&ZPtr, &FuncPtr);
+  void* int_FuncPtr = NULL;
+  void* int_ZPtr = NULL;
+
+  uint16_t test_index;
+  uint16_t test_size;
+  uint8_t flag_model;
+
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  //CDC_Transmit_FS(buffer, 10);
+	  if(b_Get_flagrun() == true)
+	  {
+		  v_Clear_flagrun();
+
+		  test_index = ui_Get_testindex();
+		  test_size = ui_Get_testsize();
+		  flag_model = ui_Get_flagmodel();
+
+
+		  switch(flag_model)
+		  {
+		  case FLAGMODEL_FLOAT:
+			  v_LoadFloatModel(&xNetParam, &WBPtr);
+			  v_FloatSetParameters(xNetParam);
+			  v_float_SetPtr(WBPtr);
+			  v_DynamicAllocForwardProp(&f_ZPtr, &f_FuncPtr);
+			  for(j = 0; j<1000; j++)
+			  {
+				  for(i = 0; i < test_size; i++)
+				  {
+					  v_LoadTestDataNum(&xDataSet, xNetParam, (test_index+i));
+					  v_ProcessForwardPropNN_FP32(f_ZPtr, f_FuncPtr, xDataSet.x_test);
+				  }
+			  }
+			  break;
+		  case FLAGMODEL_INT4:
+			  v_DynamicAllocForwardProp_int(&int_ZPtr, &int_FuncPtr);
+			  v_LoadIntModel(&xNetParam, &xDistribution, &xQuantizedVal);
+			  xNetParam.xVarPrecision.precision = 4;
+			  v_SetQuantNetParameters(xNetParam, xQuantizedVal, xDistribution);
+			  for(j = 0; j<1000; j++)
+			  {
+				  for(i = 0; i < test_size; i++)
+				  {
+					  v_LoadTestDataNum(&xDataSet, xNetParam, (test_index+i));
+					  v_QuantizeIntputs_int(&((int8_t*)int_FuncPtr)[0], (float*)xDataSet.x_test);
+					  v_ProcessForwardPropNN_int(int_ZPtr, int_FuncPtr, xDataSet.x_test);
+				  }
+			  }
+			  break;
+		  case FLAGMODEL_INT8:
+			  v_DynamicAllocForwardProp_int(&int_ZPtr, &int_FuncPtr);
+			  v_LoadIntModel(&xNetParam, &xDistribution, &xQuantizedVal);
+			  xNetParam.xVarPrecision.precision = 8;
+			  v_SetQuantNetParameters(xNetParam, xQuantizedVal, xDistribution);
+			  for(j = 0; j<1000; j++)
+			  {
+				  for(i = 0; i < test_size; i++)
+				  {
+					  v_LoadTestDataNum(&xDataSet, xNetParam, (test_index+i));
+					  v_QuantizeIntputs_int(&((int8_t*)int_FuncPtr)[0], (float*)xDataSet.x_test);
+					  v_ProcessForwardPropNN_int(int_ZPtr, int_FuncPtr, xDataSet.x_test);
+				  }
+			  }
+			  break;
+		  case FLAGMODEL_INT16:
+			  v_DynamicAllocForwardProp_int(&int_ZPtr, &int_FuncPtr);
+			  v_LoadIntModel(&xNetParam, &xDistribution, &xQuantizedVal);
+			  xNetParam.xVarPrecision.precision = 16;
+			  v_SetQuantNetParameters(xNetParam, xQuantizedVal, xDistribution);
+			  for(j = 0; j<1000; j++)
+			  {
+				  for(i = 0; i < test_size; i++)
+				  {
+					  v_LoadTestDataNum(&xDataSet, xNetParam, (test_index+i));
+					  v_QuantizeIntputs_int(&((int16_t*)int_FuncPtr)[0], (float*)xDataSet.x_test);
+					  v_ProcessForwardPropNN_int(int_ZPtr, int_FuncPtr, xDataSet.x_test);
+				  }
+			  }
+			  break;
+		  case FLAGMODEL_INT32:
+			v_DynamicAllocForwardProp_int(&int_ZPtr, &int_FuncPtr);
+			v_LoadIntModel(&xNetParam, &xDistribution, &xQuantizedVal);
+			xNetParam.xVarPrecision.precision = 32;
+			v_SetQuantNetParameters(xNetParam, xQuantizedVal, xDistribution);
+			for(j = 0; j<1000; j++)
+			{
+				  for(i = 0; i < test_size; i++)
+				  {
+					  v_LoadTestDataNum(&xDataSet, xNetParam, (test_index+i));
+					  v_QuantizeIntputs_int(&((int32_t*)int_FuncPtr)[0], (float*)xDataSet.x_test);
+					  v_ProcessForwardPropNN_int(int_ZPtr, int_FuncPtr, xDataSet.x_test);
+				  }
+			}
+			break;
+		  }
+
+
+	  }
     /* USER CODE END WHILE */
-//	v_LoadFloatModel(&xNetParam, &xWBPtr);
-//	v_LoadIntModel(&xNetParam, &xDistribution, &xQuantizedVal);
-//
-//	v_LoadTestDataNum(&xDataSet, xNetParam, 0);
     /* USER CODE BEGIN 3 */
 
   }

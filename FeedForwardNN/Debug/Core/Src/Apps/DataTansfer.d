@@ -1,7 +1,7 @@
 Core/Src/Apps/DataTansfer.o: ../Core/Src/Apps/DataTansfer.c \
  ../Core/Inc/DataTransfer.h ../Core/Inc/sys_FeedForwardNN.h \
- ../Core/Inc/int_FeedForwardNN.h ../Core/Inc/fp32_FeedForwardNN.h \
- ../USB_DEVICE/App/usbd_cdc_if.h \
+ ../Core/Inc/int_FeedForwardNN.h ../Drivers/CMSIS/Include/cmsis_gcc.h \
+ ../Core/Inc/fp32_FeedForwardNN.h ../USB_DEVICE/App/usbd_cdc_if.h \
  ../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc/usbd_cdc.h \
  ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ioreq.h \
  ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_def.h \
@@ -45,6 +45,8 @@ Core/Src/Apps/DataTansfer.o: ../Core/Src/Apps/DataTansfer.c \
 ../Core/Inc/sys_FeedForwardNN.h:
 
 ../Core/Inc/int_FeedForwardNN.h:
+
+../Drivers/CMSIS/Include/cmsis_gcc.h:
 
 ../Core/Inc/fp32_FeedForwardNN.h:
 

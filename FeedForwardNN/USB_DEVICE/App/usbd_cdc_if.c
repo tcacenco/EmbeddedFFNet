@@ -75,7 +75,30 @@
   */
 
 /* USER CODE BEGIN PRIVATE_MACRO */
+bool b_Get_flagrun()
+{
+	return xUSBDownloadVar.flag_run;
+}
 
+void v_Clear_flagrun()
+{
+	xUSBDownloadVar.flag_run = false;
+}
+
+uint16_t ui_Get_testindex()
+{
+	return xUSBDownloadVar.test_index;
+}
+
+uint16_t ui_Get_testsize()
+{
+	return xUSBDownloadVar.test_size;
+}
+
+uint8_t ui_Get_flagmodel()
+{
+	return xUSBDownloadVar.flag_model;
+}
 /* USER CODE END PRIVATE_MACRO */
 
 /**
@@ -400,15 +423,15 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 
 			case USB_MODE_SELMODEL:
 				if(strncmp((char*)&Buf[POS_TRANSFER_DATATYPE], "float", 5) == 0)
-					xUSBDownloadVar.flag_model = 1 << 0;
+					xUSBDownloadVar.flag_model = FLAGMODEL_FLOAT;
 				else if(strncmp((char*)&Buf[POS_TRANSFER_DATATYPE], "int 4", 5) == 0)
-					xUSBDownloadVar.flag_model = 1 << 1;
+					xUSBDownloadVar.flag_model = FLAGMODEL_INT4;
 				else if(strncmp((char*)&Buf[POS_TRANSFER_DATATYPE], "int 8", 5) == 0)
-					xUSBDownloadVar.flag_model = 1 << 2;
+					xUSBDownloadVar.flag_model = FLAGMODEL_INT8;
 				else if(strncmp((char*)&Buf[POS_TRANSFER_DATATYPE], "int 16", 6) == 0)
-					xUSBDownloadVar.flag_model = 1 << 3;
+					xUSBDownloadVar.flag_model = FLAGMODEL_INT16;
 				else if(strncmp((char*)&Buf[POS_TRANSFER_DATATYPE], "int 32", 6) == 0)
-					xUSBDownloadVar.flag_model = 1 << 4;
+					xUSBDownloadVar.flag_model = FLAGMODEL_INT32;
 				break;
 
 			case USB_MODE_RUN:

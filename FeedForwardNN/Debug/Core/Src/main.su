@@ -1,5 +1,5 @@
-main.c:71:5:main	192	static
-main.c:134:6:SystemClock_Config	104	static
-main.c:189:13:MX_RTC_Init	8	static
-main.c:223:13:MX_GPIO_Init	16	static
-main.c:240:6:Error_Handler	4	static
+main.c:72:5:main	344	static
+main.c:225:6:SystemClock_Config	104	static
+main.c:280:13:MX_RTC_Init	8	static
+main.c:314:13:MX_GPIO_Init	16	static
+main.c:331:6:Error_Handler	4	static

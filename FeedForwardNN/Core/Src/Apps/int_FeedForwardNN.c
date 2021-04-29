@@ -61,7 +61,7 @@ void v_SetQuantNetParameters(netparam_t	input_xnetparam, quantizedval_t input_xq
 	xDistribution = input_xDistribution;
 }
 
-void v_DynamicAllocForwardProp_int(float** ZPtrPtr, float** FuncPtrPtr)
+void v_DynamicAllocForwardProp_int(void** ZPtrPtr, void** FuncPtrPtr)
 {
 	uint16_t	i;
 	uint32_t	neurons = 0;
@@ -85,6 +85,7 @@ void v_MacForwardProp_int(void* res, uint8_t	layer, void* Funcptr, void* WBptr)
 {
 	uint32_t	index_w, index_b, rows, cols;
 	long long int	long_aux = 0;
+	int cont;
 
 	index_w = u32_GetIndex(xNetParam, layer, 0, false);
 	index_b = index_w + (xNetParam.NonLayer[layer - 1] * xNetParam.NonLayer[layer]);
@@ -99,12 +100,12 @@ void v_MacForwardProp_int(void* res, uint8_t	layer, void* Funcptr, void* WBptr)
 			long_aux = 0;
 			for (size_t j = 0; j < cols; j++)
 			{
-				//long_aux += (long long int)((int32_t*)WBptr)[index_w + (i * cols) + j] * (long long int)((int32_t*)Funcptr)[j];	//mac
-				long_aux += ((long long int)((int32_t*)WBptr)[index_w + (i * cols) + j] * (long long int)((int32_t*)Funcptr)[j]) & 0xffffffff00000000;	//mac
+				//long_aux += ((long long int)((int32_t*)WBptr)[index_w + (i * cols) + j] * (long long int)((int32_t*)Funcptr)[j]) & 0xffffffff00000000;	//mac
+				long_aux = __SMMLA(((int32_t*)WBptr)[index_w + (i * cols) + j], ((int32_t*)Funcptr)[j], long_aux);
 			}
 
 			//long_aux = (round(xQuantizedVal.Ssumcomp[layer] * long_aux) + (xNetParam.NonLayer[layer] * ((int32_t*)WBptr)[index_b + i]));
-			long_aux = (round(xQuantizedVal.Ssumcomp[layer] * long_aux) + (((int32_t*)WBptr)[index_b + i]));
+			long_aux = (round(xQuantizedVal.Ssumcomp[layer] * (long_aux << 32)) + (((int32_t*)WBptr)[index_b + i]));
 
 			// OVERFLOW and UNDERFLOW PROTECTION
 			if (long_aux >= INT32_MAX)
@@ -120,12 +121,17 @@ void v_MacForwardProp_int(void* res, uint8_t	layer, void* Funcptr, void* WBptr)
 		break;
 
 	case 16:
+		cont = (cols/2 + cols%2);
 		for (size_t i = 0; i < rows; i++)
 		{
 			long_aux = 0;
-			for (size_t j = 0; j < cols; j++)
+			for (size_t j = 0; j < cont; j++)
 			{
-				long_aux += ((int16_t*)WBptr)[index_w + (i * cols) + j] * ((int16_t*)Funcptr)[j];	//mac
+				//long_aux += ((int16_t*)WBptr)[index_w + (i * cols) + j] * ((int16_t*)Funcptr)[j];	//mac
+				if((j < (cont-1)) | (cols%2 == 0))
+					long_aux = (int32_t)__SMLAD((((((int16_t*)WBptr)[index_w + (i * cols) + 2*j] << 16) & 0xffff0000) | ((((int16_t*)WBptr)[index_w + (i * cols) + 2*j + 1]) & 0x0000ffff)), (((((int16_t*)Funcptr)[2*j] << 16) & 0xffff0000) | ((((int16_t*)Funcptr)[2*j + 1]) & 0x0000ffff)), long_aux);
+				else
+					long_aux = (int32_t)__SMLAD((((int16_t*)WBptr)[index_w + (i * cols) + 2*j] & 0x0000ffff), (((int16_t*)Funcptr)[2*j] & 0x0000ffff), long_aux);
 			}
 
 			//long_aux = (round(xQuantizedVal.Ssumcomp[layer] * long_aux) + (xNetParam.NonLayer[layer] * ((int16_t*)WBptr)[index_b + i]));
@@ -145,12 +151,17 @@ void v_MacForwardProp_int(void* res, uint8_t	layer, void* Funcptr, void* WBptr)
 		break;
 
 	case 8:
+		cont = (cols/2 + cols%2);
 		for (size_t i = 0; i < rows; i++)
 		{
 			long_aux = 0;
-			for (size_t j = 0; j < cols; j++)
+			for (size_t j = 0; j < cont; j++)
 			{
-				long_aux += ((int8_t*)WBptr)[index_w + (i * cols) + j] * ((int8_t*)Funcptr)[j];	//mac
+				//long_aux += ((int8_t*)WBptr)[index_w + (i * cols) + j] * ((int8_t*)Funcptr)[j];	//mac
+				if((j < (cont-1)) | (cols%2 == 0))
+					long_aux = (int32_t)__SMLAD((((((int8_t*)WBptr)[index_w + (i * cols) + 2*j] << 16) & 0xffff0000) | ((((int8_t*)WBptr)[index_w + (i * cols) + 2*j + 1]) & 0x0000ffff)), (((((int8_t*)Funcptr)[2*j] << 16) & 0xffff0000) | ((((int8_t*)Funcptr)[2*j + 1]) & 0x0000ffff)), long_aux);
+				else
+					long_aux = (int32_t)__SMLAD((((int8_t*)WBptr)[index_w + (i * cols) + 2*j] & 0x0000ffff), (((int8_t*)Funcptr)[2*j] & 0x0000ffff), long_aux);
 			}
 
 			//long_aux = (round(xQuantizedVal.Ssumcomp[layer] * long_aux) + (xNetParam.NonLayer[layer] * ((int8_t*)WBptr)[index_b + i]));
@@ -179,13 +190,19 @@ void v_MacForwardProp_int(void* res, uint8_t	layer, void* Funcptr, void* WBptr)
 		EvOdd_L = (EvOdd_Lm1 + xNetParam.NonLayer[layer - 1]) % 2;
 		EvOdd_Lm1 = EvOdd_Lm1 % 2;
 
+		cont = (cols/2 + cols%2);
 		for (size_t i = 0; i < rows; i++)
 		{
 			long_aux = 0;
-			for (size_t j = 0; j < cols; j++)
+			for (size_t j = 0; j < cont; j++)
 			{
 				//long_aux += ((int8_t*)WBptr)[index_w + (i * cols) + j] * ((int8_t*)Funcptr)[j];	//mac
-				long_aux += v_GetByte_4bits(((int8_t*)WBptr)[(index_w + (i * cols) + j) / 2], (index_w + (i * cols) + j) % 2) * v_GetByte_4bits(((int8_t*)Funcptr)[(j + EvOdd_Lm1) / 2], (j + EvOdd_Lm1) % 2);
+				//long_aux += v_GetByte_4bits(((int8_t*)WBptr)[(index_w + (i * cols) + j) / 2], (index_w + (i * cols) + j) % 2) * v_GetByte_4bits(((int8_t*)Funcptr)[(j + EvOdd_Lm1) / 2], (j + EvOdd_Lm1) % 2);
+
+				if((j < (cont-1)) | (cols%2 == 0))
+					long_aux = (int32_t)__SMLAD((((v_GetByte_4bits(((int8_t*)WBptr)[(index_w + (i * cols) + 2*j) / 2], (index_w + (i * cols) + 2*j) % 2) << 16) & 0xffff0000) | ((v_GetByte_4bits(((int8_t*)WBptr)[(index_w + (i * cols) + 2*j + 1) / 2], (index_w + (i * cols) + 2*j + 1) % 2)) & 0x0000ffff)), (((v_GetByte_4bits(((int8_t*)Funcptr)[(2*j + EvOdd_Lm1) / 2], (2*j + EvOdd_Lm1) % 2) << 16) & 0xffff0000) | ((v_GetByte_4bits(((int8_t*)Funcptr)[(2*j + 1 + EvOdd_Lm1) / 2], (2*j + 1 + EvOdd_Lm1) % 2)) & 0x0000ffff)), long_aux);
+				else
+					long_aux = (int32_t)__SMLAD((((int8_t*)WBptr)[index_w + (i * cols) + 2*j] & 0x0000ffff), (((int8_t*)Funcptr)[2*j] & 0x0000ffff), long_aux);
 			}
 
 			//long_aux = (round(xQuantizedVal.Ssumcomp[layer] * long_aux) + (xNetParam.NonLayer[layer] * ((int8_t*)WBptr)[index_b + i]));
@@ -499,7 +516,6 @@ void v_QuantizeIntputs_int(void* quant_input, float* input)
 			else if (input[i] <= xDistribution.func_min[0])
 			{
 				v_MountByte_4bits(&((int8_t*)quant_input)[i / 2], (int8_t)round((xDistribution.func_min[0] / xQuantizedVal.Sy[0]) + xQuantizedVal.Zy[0]), i % 2);
-
 			}
 			else
 			{

@@ -2,8 +2,8 @@ int_FeedForwardNN.c:10:6:v_DynamicAlloc_quant	32	static
 int_FeedForwardNN.c:40:6:v_FreeAlloc_quant	8	static
 int_FeedForwardNN.c:57:6:v_SetQuantNetParameters	16	static
 int_FeedForwardNN.c:64:6:v_DynamicAllocForwardProp_int	24	static
-int_FeedForwardNN.c:84:6:v_MacForwardProp_int	232	static
-int_FeedForwardNN.c:220:6:v_ReLUActiv_int	64	static
-int_FeedForwardNN.c:337:6:v_LinearActiv_int	56	static
-int_FeedForwardNN.c:428:6:v_QuantizeIntputs_int	40	static
-int_FeedForwardNN.c:522:6:v_ProcessForwardPropNN_int	40	static
+int_FeedForwardNN.c:84:6:v_MacForwardProp_int	304	static,ignoring_inline_asm
+int_FeedForwardNN.c:237:6:v_ReLUActiv_int	64	static
+int_FeedForwardNN.c:354:6:v_LinearActiv_int	56	static
+int_FeedForwardNN.c:445:6:v_QuantizeIntputs_int	40	static
+int_FeedForwardNN.c:538:6:v_ProcessForwardPropNN_int	40	static

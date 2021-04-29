@@ -73,7 +73,7 @@ void v_LoadIntModel(netparam_t *xNetParam, distribution_t *xDistribution, quanti
 	memcpy(xQuantizedVal->ZWsum,		&DataPtr[sizeof(*xNetParam) + 12 * (sizeof(float) * xNetParam->Layers)], (sizeof(float) * xNetParam->Layers));
 	memcpy(xQuantizedVal->Zy,			&DataPtr[sizeof(*xNetParam) + 13 * (sizeof(float) * xNetParam->Layers)], (sizeof(float) * xNetParam->Layers));
 
-	memcpy(((uint8_t*)xQuantizedVal->WBPtr), &DataPtr[sizeof(*xNetParam) + 14 * (sizeof(float) * xNetParam->Layers)], ((values * xNetParam->xVarPrecision.precision) / 8.0));
+	memcpy(((uint8_t*)xQuantizedVal->WBPtr), &DataPtr[sizeof(*xNetParam) + 14 * (sizeof(float) * xNetParam->Layers)], ceil((values * xNetParam->xVarPrecision.precision) / 8.0));
 }
 
 //void v_SaveIntModel(netparam_t xNetParam, distribution_t xDistribution, quantizedval_t xQuantizedVal)

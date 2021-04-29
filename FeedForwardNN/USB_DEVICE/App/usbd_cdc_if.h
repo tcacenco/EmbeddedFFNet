@@ -85,6 +85,13 @@
 #define BASEADDR_FLOATMODEL			0x080C0000
 #define BASEADDR_INTMODEL			0x080E0000
 
+#define	FLAGMODEL_FLOAT					0x01
+#define	FLAGMODEL_INT4					0x01 << 1
+#define	FLAGMODEL_INT8					0x01 << 2
+#define	FLAGMODEL_INT16					0x01 << 3
+#define	FLAGMODEL_INT32					0x01 << 4
+
+
 #define BUG_FACTOR					0
 
 #define	PACKET_SIZE					64
@@ -114,7 +121,11 @@ static volatile	USBDownloadVar_t	xUSBDownloadVar = {.RxMode=false, .flag_model=0
   */
 
 /* USER CODE BEGIN EXPORTED_MACRO */
-
+bool b_Get_flagrun();
+void v_Clear_flagrun();
+uint16_t ui_Get_testindex();
+uint16_t ui_Get_testsize();
+uint8_t	ui_Get_flagmodel();
 /* USER CODE END EXPORTED_MACRO */
 
 /**
